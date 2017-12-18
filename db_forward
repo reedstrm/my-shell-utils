@@ -1,0 +1,37 @@
+#!/bin/bash
+
+if [ $# = 0 ]
+    then
+        echo "Usage: $0 --list | [--exit ] hostname [port]
+
+        Managages local to remote ssh port forwards.
+        Lists, removes, or creates local port forwards to port
+        (default 5432) on hostname.
+        Reports value of local forwarding port
+        uses first available port starting at 10000 + remote_port,
+        up to 10010 + remote_port
+        "
+    exit
+fi
+if [ $1 = '--list' ]
+    then
+        ( cd "${HOME}/.ssh/"; ls *tunnel  2>/dev/null | cat )
+        netstat -tapn 2>/dev/null | grep LISTEN.*ssh
+    exit
+fi
+if [ $1 = '--exit' ]
+    then
+        REMOTE_PORT=${3:-5432}
+        ssh -q -o ControlPath="${HOME}/.ssh/${2}_${REMOTE_PORT}.tunnel" -O exit "$2"
+    exit
+fi
+
+REMOTE_PORT=${2:-5432}
+LOCAL_PORT=$(($REMOTE_PORT+10000))
+LIMIT=$(($REMOTE_PORT+10010))
+
+until [ $LOCAL_PORT -ge $LIMIT ]
+    do
+    ssh -L $LOCAL_PORT:localhost:${REMOTE_PORT} -qNTf -o ExitOnForwardFailure=yes -o ControlMaster=auto -o ControlPath="${HOME}/.ssh/${1}_${REMOTE_PORT}.tunnel" "$1" && echo "port: $LOCAL_PORT" && break
+    LOCAL_PORT=$(($LOCAL_PORT+1))
+    done
