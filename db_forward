@@ -22,7 +22,11 @@ fi
 if [ "$1" = '--exit'  -o "$1" = '-x' ]
     then
         REMOTE_PORT=${3:-5432}
-        ssh -q -o ControlPath="${HOME}/.ssh/${2}_${REMOTE_PORT}.tunnel" -O exit "$2"
+        CONTROL_FILE="${HOME}/.ssh/${2}_${REMOTE_PORT}.tunnel"
+        if ! ssh -q -o ControlPath="${CONTROL_FILE}" -O exit "$2"
+            then
+                rm "${CONTROL_FILE}" 2>/dev/null
+            fi
     exit
 fi
 
