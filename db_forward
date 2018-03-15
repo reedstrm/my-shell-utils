@@ -1,8 +1,8 @@
 #!/bin/bash
 
-if [ $# = 0 ]
+if [ "$1" = '--help' -o "$1" = '-h' ]
     then
-        echo "Usage: $0 --list | [--exit ] hostname [port]
+        echo "Usage: $0 --help | --list | [--exit ] hostname [port]
 
         Managages local to remote ssh port forwards.
         Lists, removes, or creates local port forwards to port
@@ -13,13 +13,13 @@ if [ $# = 0 ]
         "
     exit
 fi
-if [ $1 = '--list' ]
+if [ $# = 0 -o "$1" = '--list' -o "$1" = '-l' ]
     then
         ( cd "${HOME}/.ssh/"; ls *tunnel  2>/dev/null | cat )
         netstat -tapn 2>/dev/null | grep LISTEN.*ssh
     exit
 fi
-if [ $1 = '--exit' ]
+if [ "$1" = '--exit'  -o "$1" = '-x' ]
     then
         REMOTE_PORT=${3:-5432}
         ssh -q -o ControlPath="${HOME}/.ssh/${2}_${REMOTE_PORT}.tunnel" -O exit "$2"
