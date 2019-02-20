@@ -1,0 +1,62 @@
+#!/usr/bin/env python
+import atexit
+import termios
+import tty
+import os
+import select
+import sys
+
+from pathlib import Path
+from time import sleep, time
+from urllib import parse
+from pyotp import TOTP
+from pyzbar.pyzbar import decode
+from PIL import Image
+
+import pyperclip
+
+pyperclip.set_clipboard('xsel')
+
+
+# Set stdin to raw to allow terminate on any keypress
+fd = sys.stdin.fileno()
+old_settings = termios.tcgetattr(fd)
+tty.setraw(fd)
+
+# clean up term on exit
+atexit.register(termios.tcsetattr, fd, termios.TCSADRAIN, old_settings)
+
+def calc_totp(img):
+    qr = decode(Image.open(img))[0]
+    params = dict(parse.parse_qsl(parse.urlsplit(qr.data).query))
+
+    totp = TOTP(params[b'secret'])
+    return totp, params[b'issuer'].decode('utf-8')
+
+
+if len(sys.argv) > 1:
+    sec_dir = Path(sys.argv[1])
+    if sec_dir.is_dir():
+        imgs = [str(img) for img in sec_dir.iterdir()]
+    else:
+        imgs = sys.argv[1:]
+    totps = [calc_totp(img) for img in imgs]
+    stop_time = time() + 30
+    print('\n'*len(totps), end='')  # make space for output
+    try:
+        while(time() < stop_time):
+            print('\033[F'*len(totps), end='\r')
+            for topt, issuer in totps:
+                code = topt.now()
+                print(code, issuer, end='\r\n')  # raw mode: need both
+            if len(totps) == 1:
+                pyperclip.copy(code, primary=True)
+
+            key_pressed, _, _ = select.select([sys.stdin], [], [], 1)
+            if key_pressed:
+                _ = sys.stdin.read(1)  # eat the one character
+                exit(0)
+    except KeyboardInterrupt:
+        sys.exit(0)
+else:
+    print("Need at least one QR image file")
