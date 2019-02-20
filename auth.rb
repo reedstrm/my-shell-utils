@@ -20,11 +20,11 @@ begin
     exit 1
   end
 
-  if File.directory? ARGV[0]
-    imgs = Pathname.new(ARGV[0]).children.map(&:to_path)
-  else
-    imgs = ARGV
-  end
+  imgs = if File.directory? ARGV[0]
+           Pathname.new(ARGV[0]).children.map(&:to_path)
+         else
+           ARGV
+         end
 
   totps = totps imgs
 
