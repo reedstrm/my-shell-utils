@@ -14,36 +14,34 @@ def totps(imgs)
   end
 end
 
+if ARGV.empty?
+  puts 'Need at least one QR image file'
+  exit 1
+end
+
+imgs = if File.directory? ARGV[0]
+         Pathname.new(ARGV[0]).children.map(&:to_path)
+       else
+         ARGV
+       end
+
+totps = totps imgs
+
+stop_time = Time.now + 30
+
+puts "\n" * totps.length
+
 begin
-  if ARGV.empty?
-    puts 'Need at least one QR image file'
-    exit 1
-  end
-
-  imgs = if File.directory? ARGV[0]
-           Pathname.new(ARGV[0]).children.map(&:to_path)
-         else
-           ARGV
-         end
-
-  totps = totps imgs
-
-  stop_time = Time.now + 30
-
-  puts "\n" * totps.length
-
-  begin
-    while Time.now < stop_time
-      print "\033[F" * totps.length
-      totps.each do |totp|
-        code = totp.now
-        puts code + "\t" + totp.issuer
-        Clipboard.copy code if totps.length == 1
-      end
-      sleep 1
+  while Time.now < stop_time
+    print "\033[F" * totps.length
+    totps.each do |totp|
+      code = totp.now
+      puts code + "\t" + totp.issuer
+      Clipboard.copy code if totps.length == 1
     end
-  rescue Interrupt
-    puts "\r"
-    exit
+    sleep 1
   end
+rescue Interrupt
+  puts "\r"
+  exit
 end
