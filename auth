@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import atexit
 import termios
 import tty
@@ -29,6 +29,8 @@ atexit.register(termios.tcsetattr, fd, termios.TCSADRAIN, old_settings)
 def calc_totp(img):
     qr = decode(Image.open(img))[0]
     params = dict(parse.parse_qsl(parse.urlsplit(qr.data).query))
+    if b'issuer' not in params:
+        params[b'issuer'] = img[:-4].encode('utf-8')
 
     totp = TOTP(params[b'secret'])
     return totp, params[b'issuer'].decode('utf-8')
@@ -37,7 +39,7 @@ def calc_totp(img):
 if len(sys.argv) > 1:
     sec_dir = Path(sys.argv[1])
     if sec_dir.is_dir():
-        imgs = [str(img) for img in sec_dir.iterdir()]
+        imgs = [str(img) for img in sec_dir.iterdir() if Path(img).is_file()]
     else:
         imgs = sys.argv[1:]
     totps = [calc_totp(img) for img in imgs]
@@ -51,6 +53,7 @@ if len(sys.argv) > 1:
                 print(code, issuer, end='\r\n')  # raw mode: need both
             if len(totps) == 1:
                 pyperclip.copy(code, primary=True)
+                pyperclip.copy(code)
 
             key_pressed, _, _ = select.select([sys.stdin], [], [], 1)
             if key_pressed:
@@ -59,4 +62,4 @@ if len(sys.argv) > 1:
     except KeyboardInterrupt:
         sys.exit(0)
 else:
-    print("Need at least one QR image file")
+    print("Need at least one QR image file\r")
