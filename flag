@@ -1,0 +1,54 @@
+#!/usr/bin/python3
+import argparse
+import usb.core
+
+
+def main():
+    parser = argparse.ArgumentParser(description="Change Luxafor color")
+    color_codes = {
+        "red": (255, 0, 0),
+        "green": (0, 255, 0),
+        "blue": (0, 0, 255),
+        "yellow": (255, 255, 0),
+        "magenta": (255, 0, 255),
+        "cyan": (0, 255, 255),
+        "orange": (255, 128, 0),
+        "pink": (255, 0, 128),
+        "purple": (128, 0, 255),
+        "lime": (128, 255, 0),
+        "white": (255, 255, 255),
+        "off": (0, 0, 0),
+    }
+    parser.add_argument("color", choices=color_codes.keys(), help="color to change to", nargs="?", default="off")
+    parser.add_argument("-n", "--number", type=int, help="Zero based index of flag to act on.")
+    parser.add_argument("-s", "-a", "--address", type=int, help="USB address of flag to act on.")
+    parser.add_argument("-l", "--list", action="store_true", help="List USB addresses of flags.")
+    args = parser.parse_args()
+
+    if args.list:
+        print(' '.join([str(f.address) for f in usb.core.find(idVendor=0x04D8, idProduct=0xF372, find_all=True)]))
+        exit(0)
+    if args.address:
+        devs = usb.core.find(address=args.address, find_all=True)
+    else:
+        devs = usb.core.find(idVendor=0x04D8, idProduct=0xF372, find_all=True)
+    if devs is []:
+        print("Not connected")
+        return
+    if args.number:
+        devs = list(devs)[args.number:args.number+1]
+    for dev in devs:
+        if dev.is_kernel_driver_active(0):
+            dev.detach_kernel_driver(0)
+        try:
+            dev.set_configuration()
+        except usb.core.USBError:
+            print("Did you give Luxafor USB permission to your user?")
+            return
+        dev.set_configuration()
+        dev.write(1, [0, 0])
+        dev.write(1, [1, 255, *color_codes[args.color]])
+
+
+if __name__ == "__main__":
+    main()

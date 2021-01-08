@@ -1,0 +1,41 @@
+#!/bin/bash
+
+if [ $1 = "off" ]
+then
+    n=0
+    until [ "$n" -gt 5 ]
+    do
+        gatttool -b BE:58:60:00:C0:34 -a 9 -n 7e00040000000000ef --char-write-req && break
+        n=$((n+1))
+        sleep 1
+    done
+elif [ $1 = "on" ]
+then
+    n=0
+    until [ "$n" -gt 5 ]
+    do
+        gatttool -b BE:58:60:00:C0:34 -a 9 -n 7e00040100000000ef --char-write-req && break
+        n=$((n+1))
+        sleep 1
+    done
+elif [ $1 = "bri" ]
+then
+    printf -v bri "%2x" $2
+    n=0
+    until [ "$n" -gt 5 ]
+    do
+        gatttool -b BE:58:60:00:C0:34 -a 9 -n "7e0001${bri}00000000ef" --char-write-req && break
+        n=$((n+1))
+        sleep 1
+    done
+elif [ $1 = "col" ]
+then
+    col=$2
+    n=0
+    until [ "$n" -gt 5 ]
+    do
+        gatttool -b BE:58:60:00:C0:34 -a 9 -n "7e000503${col}00ef" --char-write-req && break
+        n=$((n+1))
+        sleep 1
+    done
+fi
