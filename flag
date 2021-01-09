@@ -19,14 +19,35 @@ def main():
         "white": (255, 255, 255),
         "off": (0, 0, 0),
     }
-    parser.add_argument("color", choices=color_codes.keys(), help="color to change to", nargs="?", default="off")
-    parser.add_argument("-n", "--number", type=int, help="Zero based index of flag to act on.")
-    parser.add_argument("-s", "-a", "--address", type=int, help="USB address of flag to act on.")
-    parser.add_argument("-l", "--list", action="store_true", help="List USB addresses of flags.")
+    parser.add_argument(
+        "color",
+        choices=color_codes.keys(),
+        help="color to change to",
+        nargs="?",
+        default="off",
+    )
+    parser.add_argument(
+        "-n", "--number", type=int, help="Zero based index of flag to act on."
+    )
+    parser.add_argument(
+        "-s", "-a", "--address", type=int, help="USB address of flag to act on."
+    )
+    parser.add_argument(
+        "-l", "--list", action="store_true", help="List USB addresses of flags."
+    )
     args = parser.parse_args()
 
     if args.list:
-        print(' '.join([str(f.address) for f in usb.core.find(idVendor=0x04D8, idProduct=0xF372, find_all=True)]))
+        print(
+            " ".join(
+                [
+                    str(f.address)
+                    for f in usb.core.find(
+                        idVendor=0x04D8, idProduct=0xF372, find_all=True
+                    )
+                ]
+            )
+        )
         exit(0)
     if args.address:
         devs = usb.core.find(address=args.address, find_all=True)
@@ -36,7 +57,7 @@ def main():
         print("Not connected")
         return
     if args.number:
-        devs = list(devs)[args.number:args.number+1]
+        devs = list(devs)[args.number : args.number + 1]
     for dev in devs:
         if dev.is_kernel_driver_active(0):
             dev.detach_kernel_driver(0)
