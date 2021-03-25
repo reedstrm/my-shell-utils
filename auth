@@ -19,12 +19,12 @@ pyperclip.set_clipboard('xsel')
 
 
 # Set stdin to raw to allow terminate on any keypress
-fd = sys.stdin.fileno()
-old_settings = termios.tcgetattr(fd)
-tty.setraw(fd)
+#fd = sys.stdin.fileno()
+#old_settings = termios.tcgetattr(fd)
+#tty.setraw(fd)
 
 # clean up term on exit
-atexit.register(termios.tcsetattr, fd, termios.TCSADRAIN, old_settings)
+#atexit.register(termios.tcsetattr, fd, termios.TCSADRAIN, old_settings)
 
 def calc_totp(img):
     qr = decode(Image.open(img))[0]
@@ -43,23 +43,26 @@ if len(sys.argv) > 1:
     else:
         imgs = sys.argv[1:]
     totps = [calc_totp(img) for img in imgs]
-    stop_time = time() + 30
-    print('\n'*len(totps), end='')  # make space for output
-    try:
-        while(time() < stop_time):
-            print('\033[F'*len(totps), end='\r')
-            for topt, issuer in totps:
-                code = topt.now()
-                print(code, issuer, end='\r\n')  # raw mode: need both
-            if len(totps) == 1:
-                pyperclip.copy(code, primary=True)
-                pyperclip.copy(code)
+    if not (sys.stdout.isatty()):
+        print(totps[0][0].now())
+    else:
+        stop_time = time() + 30
+        print('\n'*len(totps), end='')  # make space for output
+        try:
+            while(time() < stop_time):
+                print('\033[F'*len(totps), end='\r')
+                for topt, issuer in totps:
+                    code = topt.now()
+                    print(code, issuer, end='\r\n')  # raw mode: need both
+                if len(totps) == 1:
+                    pyperclip.copy(code, primary=True)
+                    pyperclip.copy(code)
 
-            key_pressed, _, _ = select.select([sys.stdin], [], [], 1)
-            if key_pressed:
-                _ = sys.stdin.read(1)  # eat the one character
-                exit(0)
-    except KeyboardInterrupt:
-        sys.exit(0)
+                key_pressed, _, _ = select.select([sys.stdin], [], [], 1)
+                if key_pressed:
+                    _ = sys.stdin.read(1)  # eat the one character
+                    exit(0)
+        except KeyboardInterrupt:
+            sys.exit(0)
 else:
     print("Need at least one QR image file\r")
