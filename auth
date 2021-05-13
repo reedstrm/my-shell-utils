@@ -49,15 +49,20 @@ if len(sys.argv) > 1:
         stop_time = time() + 30
         print('\n'*len(totps), end='')  # make space for output
         try:
+            old_code = str(int(pyperclip.paste(primary=True)))
+        except ValueError: # Don't mess w/ primary (middle button) unless it's empty or a number
+            old_code = ''
+        try:
             while(time() < stop_time):
                 print('\033[F'*len(totps), end='\r')
                 for topt, issuer in totps:
                     code = topt.now()
-                    print(code, issuer, end='\r\n')  # raw mode: need both
+                    print(code, old_code, issuer, end='\r\n')  # raw mode: need both
                 if len(totps) == 1:
-                    pyperclip.copy(code, primary=True)
                     pyperclip.copy(code)
-
+                    if pyperclip.paste(primary=True) == old_code:
+                    pyperclip.copy(code, primary=True)
+                old_code = code
                 key_pressed, _, _ = select.select([sys.stdin], [], [], 1)
                 if key_pressed:
                     _ = sys.stdin.read(1)  # eat the one character
